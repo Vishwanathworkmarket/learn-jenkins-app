@@ -11,7 +11,7 @@ pipeline {
             }
             steps {
                 sh '''
-                mkdir build
+                mkdir -p build
                 touch build/index.txt
                 ls -la
                 node --version
