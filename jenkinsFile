@@ -11,23 +11,36 @@ pipeline {
             }
             steps {
                 sh '''
-                mkdir -p build
-                touch build/index.txt
-                ls -la
-                node --version
-                npm --version
-                npm ci 
-                npm run build
-                ls -la
+                    ls -la
+                    node --version
+                    npm --version
+                    npm ci
+                    npm run build
+                    ls -la
                 '''
             }
         }
 
         stage('Test') {
-            steps {
-                echo 'Test Stage'
-                sh 'test -f build/index.html'
+            agent {
+                docker {
+                    image 'node:18-alpine'
+                    reuseNode true
+                }
             }
+
+            steps {
+                sh '''
+                    test -f build/index.html
+                    npm test
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            junit 'test-results/junit.xml'
         }
     }
 }
