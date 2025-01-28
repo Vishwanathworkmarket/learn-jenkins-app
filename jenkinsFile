@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     stages {
-        stage('automating the build') {
+        stage('build') {
             agent {
                 docker {
                     image 'node:18-alpine'
