@@ -21,6 +21,53 @@ pipeline {
             }
         }
 
+        stage('Test') {
+            agent {
+                docker {
+                    image 'node:18-alpine'
+                    reuseNode true
+                }
+            }
+
+            steps {
+                sh '''
+                    test -f build/index.html
+                    npm test
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            junit 'test-results/junit.xml'
+        }
+    }
+}
+pipeline {
+    agent any
+
+    stages {
+
+        stage('Build') {
+            agent {
+                docker {
+                    image 'node:18-alpine'
+                    reuseNode true
+                }
+            }
+            steps {
+                sh '''
+                    ls -la
+                    node --version
+                    npm --version
+                    npm ci
+                    npm run build
+                    ls -la
+                '''
+            }
+        }
+
         stage('Tests') {
             parallel {
                 stage('Unit tests') {
@@ -30,9 +77,10 @@ pipeline {
                             reuseNode true
                         }
                     }
+
                     steps {
                         sh '''
-                            test -f build/index.html
+                            #test -f build/index.html
                             npm test
                         '''
                     }
@@ -50,24 +98,19 @@ pipeline {
                             reuseNode true
                         }
                     }
+
                     steps {
                         sh '''
                             npm install serve
                             node_modules/.bin/serve -s build &
                             sleep 10
-                            npx playwright test --reporter=html
+                            npx playwright test  --reporter=html
                         '''
                     }
+
                     post {
                         always {
-                            publishHTML([
-                                allowMissing: true, 
-                                alwaysLinkToLastBuild: true, 
-                                keepAll: true, 
-                                reportDir: 'playwright-report', 
-                                reportFiles: 'index.html', 
-                                reportName: 'Playwright HTML Report'
-                            ])
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright HTML Report', reportTitles: '', useWrapperFileDirectly: true])
                         }
                     }
                 }
@@ -87,12 +130,6 @@ pipeline {
                     node_modules/.bin/netlify --version
                 '''
             }
-        }
-    }
-
-    post {
-        always {
-            echo 'Pipeline execution completed!'
         }
     }
 }
